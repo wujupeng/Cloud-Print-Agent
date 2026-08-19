@@ -1,0 +1,11 @@
+.codeartsdoer/
+*.tar.gz
+*.exe
+*.dll
+*.so
+*.dylib
+cloud-print-agent
+cloud-print-agent-src.tar.gz
+.idea/
+.vscode/
+*.log

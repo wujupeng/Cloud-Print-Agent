@@ -1,0 +1,23 @@
+config_version: 1
+cloud:
+  endpoint: print.oascii.com
+  protocol: wss
+  agent_id: BAOSHAN-AGENT-01
+ops:
+  port: 8901
+storage:
+  data_dir: /<%= data_dir %>
+  log_dir: /var/log/cloud-print-agent
+log:
+  level: info
+  retention_days: 30
+  max_size_mb: 100
+devices:
+  - device_id: BAOSHAN-PS01
+    name: 宝山-LQ630KII
+    ip: 192.168.2.81
+    hostname: ps01
+    model: EPSON LQ-630KII
+    protocol: RAW
+    status: ONLINE
+    factory: 宝山工厂

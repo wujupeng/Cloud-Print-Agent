@@ -1,0 +1,4 @@
+debian ALL=(root) NOPASSWD: /usr/bin/systemctl start cloud-print-agent
+debian ALL=(root) NOPASSWD: /usr/bin/systemctl stop cloud-print-agent
+debian ALL=(root) NOPASSWD: /usr/bin/systemctl restart cloud-print-agent
+debian ALL=(root) NOPASSWD: /usr/bin/systemctl status cloud-print-agent

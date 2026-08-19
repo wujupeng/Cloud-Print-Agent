@@ -1,0 +1,25 @@
+[Unit]
+Description=Cloud Print Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=debian
+Group=debian
+EnvironmentFile=-/etc/cloud-print-agent/credentials.env
+ExecStart=/usr/local/bin/cloud-print-agent -config /etc/cloud-print-agent/config.yaml
+WorkingDirectory=/var/lib/cloud-print-agent
+Restart=on-failure
+RestartSec=5
+WatchdogSec=60
+LimitNOFILE=65536
+MemoryMax=200M
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/cloud-print-agent /var/log/cloud-print-agent /etc/cloud-print-agent
+
+[Install]
+WantedBy=multi-user.target
