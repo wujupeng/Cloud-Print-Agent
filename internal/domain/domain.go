@@ -15,9 +15,10 @@ import (
 type Protocol string
 
 const (
-	ProtocolRAW Protocol = "RAW" // RAW/JetDirect，端口 9100
-	ProtocolLPR Protocol = "LPR" // LPR，端口 515，RFC 1179
-	ProtocolIPP Protocol = "IPP" // IPP，端口 631，RFC 8011
+	ProtocolRAW  Protocol = "RAW"  // RAW/JetDirect，端口 9100
+	ProtocolLPR  Protocol = "LPR"  // LPR，端口 515，RFC 1179
+	ProtocolIPP  Protocol = "IPP"  // IPP，端口 631，RFC 8011
+	ProtocolCUPS Protocol = "CUPS" // CUPS，通过 lp 命令打印
 	ProtocolUnknown Protocol = "UNKNOWN" // 未知协议（探测全失败）
 )
 
@@ -168,6 +169,8 @@ func (d *Device) DefaultPort() int {
 		return 515
 	case ProtocolIPP:
 		return 631
+	case ProtocolCUPS:
+		return 0
 	default:
 		return 0
 	}
@@ -201,6 +204,7 @@ type PrintTask struct {
 	ErrorCode   string     `json:"error_code,omitempty"`          // 失败错误码
 	ErrorMsg    string     `json:"error_msg,omitempty"`           // 失败错误消息
 	SeqNo       int64      `json:"seq_no,omitempty"`              // 到达序号（持久化键）
+	Content     []byte     `json:"content,omitempty"`             // 文档内容（由 Server 下发）
 }
 
 // AgentConfig Agent 运行配置。

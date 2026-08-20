@@ -13,7 +13,7 @@ import (
 	"github.com/cloud-print/agent/internal/storage"
 )
 
-var deviceIDPattern = regexp.MustCompile(`^[A-Z0-9]{3,32}$`)
+var deviceIDPattern = regexp.MustCompile(`^[A-Za-z0-9\-]{3,64}$`)
 
 type Manager struct {
 	mu      sync.RWMutex
@@ -42,9 +42,11 @@ func (m *Manager) validate(dev *domain.Device) error {
 		return errs.Newf(errs.ErrDeviceFieldInvalid,
 			"name length must be 1-64, got %d", len(dev.Name))
 	}
-	ip := net.ParseIP(dev.IP)
-	if ip == nil || ip.To4() == nil {
-		return errs.Newf(errs.ErrDeviceFieldInvalid, "ip must be valid IPv4, got %q", dev.IP)
+	if dev.Protocol != domain.ProtocolCUPS {
+		ip := net.ParseIP(dev.IP)
+		if ip == nil || ip.To4() == nil {
+			return errs.Newf(errs.ErrDeviceFieldInvalid, "ip must be valid IPv4, got %q", dev.IP)
+		}
 	}
 	if len(dev.Model) < 1 || len(dev.Model) > 64 {
 		return errs.Newf(errs.ErrDeviceFieldInvalid,

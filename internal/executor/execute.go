@@ -112,6 +112,22 @@ func (e *Executor) executeTask(ctx context.Context, task *domain.PrintTask) erro
 }
 
 func (e *Executor) loadTaskData(task *domain.PrintTask) (io.ReadCloser, error) {
+	if len(task.Content) > 0 {
+		tmpFile, err := os.CreateTemp("", "print-task-*")
+		if err != nil {
+			return nil, errs.Wrap(errs.ErrStorageIO, "create temp file", err)
+		}
+		if _, err := tmpFile.Write(task.Content); err != nil {
+			tmpFile.Close()
+			return nil, errs.Wrap(errs.ErrStorageIO, "write temp file", err)
+		}
+		tmpFile.Close()
+		f, err := os.Open(tmpFile.Name())
+		if err != nil {
+			return nil, errs.Wrap(errs.ErrStorageIO, "reopen temp file", err)
+		}
+		return f, nil
+	}
 	if task.DocumentRef == "" {
 		return nil, errs.Newf(errs.ErrTaskDataInvalid, "task %s document_ref empty", task.TaskID)
 	}

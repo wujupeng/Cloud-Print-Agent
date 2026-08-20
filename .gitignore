@@ -9,3 +9,5 @@ cloud-print-agent-src.tar.gz
 .idea/
 .vscode/
 *.log
+deploy/credentials.env
+tmp_fix/

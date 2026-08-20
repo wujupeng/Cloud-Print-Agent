@@ -69,6 +69,8 @@ func AdapterFor(protocol domain.Protocol) PrintAdapter {
 		return NewLprAdapter()
 	case domain.ProtocolIPP:
 		return NewIppAdapter()
+	case domain.ProtocolCUPS:
+		return NewCupsAdapter()
 	default:
 		return nil
 	}

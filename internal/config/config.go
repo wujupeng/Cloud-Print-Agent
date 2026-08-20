@@ -21,6 +21,7 @@ func Load(path string) (*domain.AgentConfig, error) {
 	}
 
 	cfg.ApplyFixedDefaults()
+	ApplyEnvOverrides(&cfg)
 	cfg.Cloud.DerivedURL = cfg.DeriveCloudURL()
 
 	if err := Validate(&cfg); err != nil {

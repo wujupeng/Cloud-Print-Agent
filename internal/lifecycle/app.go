@@ -139,6 +139,9 @@ func Run(configPath string) error {
 		app.cfg, app.cfgPath, app.cred, app.queue, app.deviceMgr,
 		app.executor, app.prober, app.metrics, app.logger, app.audit,
 	)
+	app.executor.OnTaskResult(func(task *domain.PrintTask) {
+		_ = app.cloudLink.Reporter().ReportTaskResult(task)
+	})
 	if err := app.cloudLink.Start(ctx); err != nil {
 		logger.Error("cloudlink start failed", zap.Error(err))
 	}

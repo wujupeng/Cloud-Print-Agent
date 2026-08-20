@@ -190,24 +190,13 @@ func (h *Heartbeat) sendOnce(ctx context.Context) {
 		h.recordMiss()
 		return
 	}
+	h.logger.Info("heartbeat sent", zap.String("agent_id", h.cfg.AgentID), zap.Int("online_devices", online))
 
-	ackCtx, cancelAck := context.WithTimeout(ctx, heartbeatTimeout)
-	defer cancelAck()
-	var ack domain.Envelope
-	if err := conn.Read(ackCtx, &ack); err != nil {
-		h.logger.Warn("heartbeat ack read failed", zap.Error(err))
-		h.recordMiss()
-		return
-	}
-	if ack.Type != heartbeatAckType {
-		h.logger.Warn("heartbeat unexpected ack type",
-			zap.String("type", ack.Type),
-		)
-	}
 	h.mu.Lock()
 	h.missCount = 0
 	h.mu.Unlock()
 }
+
 
 func (h *Heartbeat) recordMiss() {
 	h.mu.Lock()

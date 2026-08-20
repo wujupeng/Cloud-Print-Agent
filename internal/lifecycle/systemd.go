@@ -18,7 +18,11 @@ func NotifyWatchdog() error {
 }
 
 func WatchdogInterval() (time.Duration, bool) {
-	return daemon.SdWatchdogEnabled()
+	d, err := daemon.SdWatchdogEnabled(false)
+	if err != nil || d <= 0 {
+		return 0, false
+	}
+	return d, true
 }
 
 func StartWatchdog(ctx context.Context, interval time.Duration) {

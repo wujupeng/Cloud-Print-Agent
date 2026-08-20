@@ -144,7 +144,7 @@ func (u *DomainUpdater) UpdateDomain(ctx context.Context, newEndpoint string) er
 }
 
 func (u *DomainUpdater) validateAndProbe(ctx context.Context, endpoint string) error {
-	validateCtx, cancel1 := context.WithTimeout(ctx, domainValidateTimeout)
+	_, cancel1 := context.WithTimeout(ctx, domainValidateTimeout)
 	defer cancel1()
 	if !isValidDomain(endpoint) {
 		return errs.Newf(errs.ErrDomainUpdateFail, "invalid domain %q", endpoint)

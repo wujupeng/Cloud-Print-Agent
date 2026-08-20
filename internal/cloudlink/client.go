@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -31,6 +33,10 @@ type Client struct {
 	resolver *Resolver
 	agentID  string
 	logger   *zap.Logger
+
+	port            int
+	protocol        string
+	insecureSkip    bool
 }
 
 func NewClient(agentID string, resolver *Resolver, logger *zap.Logger) *Client {
@@ -40,22 +46,44 @@ func NewClient(agentID string, resolver *Resolver, logger *zap.Logger) *Client {
 	if resolver == nil {
 		resolver = NewResolver(logger)
 	}
+
+	port := cloudPort
+	if v := os.Getenv("CPA_CLOUD_PORT"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil && p > 0 {
+			port = p
+		}
+	}
+
+	protocol := "wss"
+	if v := os.Getenv("CPA_CLOUD_PROTOCOL"); v != "" {
+		protocol = v
+	}
+
+	insecureSkip := false
+	if v := os.Getenv("CPA_TLS_INSECURE"); v == "true" || v == "1" {
+		insecureSkip = true
+	}
+
 	return &Client{
-		resolver: resolver,
-		agentID:  agentID,
-		logger:   logger,
+		resolver:    resolver,
+		agentID:     agentID,
+		logger:      logger,
+		port:        port,
+		protocol:    protocol,
+		insecureSkip: insecureSkip,
 	}
 }
 
-func (c *Client) buildWSSURL(endpoint string) string {
+func (c *Client) buildWSSURL(endpoint string, token string) string {
 	u := url.URL{
-		Scheme: "wss",
-		Host:   fmt.Sprintf("%s:%d", endpoint, cloudPort),
+		Scheme: c.protocol,
+		Host:   fmt.Sprintf("%s:%d", endpoint, c.port),
 		Path:   cloudPath,
 	}
 	q := u.Query()
 	q.Set("v", cloudProtocolV)
 	q.Set("agent_id", c.agentID)
+	q.Set("token", token)
 	u.RawQuery = q.Encode()
 	return u.String()
 }
@@ -64,13 +92,18 @@ func (c *Client) dialOptions(token string) *websocket.DialOptions {
 	tlsConfig := &tls.Config{
 		MinVersion:         tls.VersionTLS12,
 		ServerName:         "",
-		InsecureSkipVerify: false,
+		InsecureSkipVerify: c.insecureSkip,
+	}
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
 	}
 	return &websocket.DialOptions{
 		HTTPHeader: http.Header{
 			"Authorization": []string{fmt.Sprintf("Bearer %s", token)},
 		},
-		TLSConfig: tlsConfig,
+		HTTPClient: httpClient,
 	}
 }
 
@@ -85,9 +118,15 @@ func (c *Client) Dial(ctx context.Context, endpoint string, token string) (*Conn
 		zap.Int("latency_ms", lat),
 	)
 
-	wssURL := c.buildWSSURL(endpoint)
+	wssURL := c.buildWSSURL(endpoint, token)
 	opts := c.dialOptions(token)
-	opts.TLSConfig.ServerName = endpoint
+	if opts.HTTPClient != nil {
+		if tr, ok := opts.HTTPClient.Transport.(*http.Transport); ok {
+			if tr.TLSClientConfig != nil {
+				tr.TLSClientConfig.ServerName = endpoint
+			}
+		}
+	}
 
 	dialCtx, cancel := context.WithTimeout(ctx, writeTimeout)
 	defer cancel()
@@ -135,9 +174,6 @@ func (c *Conn) ResolvedIP() string {
 }
 
 func (c *Conn) Read(ctx context.Context, msg *domain.Envelope) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	if c.closed {
 		return errs.New(errs.ErrCloudDisconnected, "conn closed")
 	}
@@ -156,9 +192,6 @@ func (c *Conn) Read(ctx context.Context, msg *domain.Envelope) error {
 }
 
 func (c *Conn) Write(ctx context.Context, msg *domain.Envelope) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	if c.closed {
 		return errs.New(errs.ErrCloudDisconnected, "conn closed")
 	}
