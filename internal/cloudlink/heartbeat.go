@@ -192,6 +192,12 @@ func (h *Heartbeat) sendOnce(ctx context.Context) {
 	}
 	h.logger.Info("heartbeat sent", zap.String("agent_id", h.cfg.AgentID), zap.Int("online_devices", online))
 
+	if h.deviceMgr != nil && h.reporter != nil {
+		for _, d := range h.deviceMgr.List() {
+			_ = h.reporter.ReportDeviceStatus(d.DeviceID, d.Status)
+		}
+	}
+
 	h.mu.Lock()
 	h.missCount = 0
 	h.mu.Unlock()
